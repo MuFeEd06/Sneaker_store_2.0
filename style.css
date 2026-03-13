@@ -475,6 +475,63 @@ header.navbar .logo img { height: 50px; }
 
 .product-info label { font-size: 0.9rem; color: var(--text-muted); }
 
+/* =================================================
+   COLOR SWATCHES
+   ================================================= */
+.color-section { margin: 16px 0 4px; }
+
+.color-label {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.color-label span {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.color-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--swatch-color);
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.color-swatch:hover {
+    transform: scale(1.18);
+    box-shadow: 0 4px 12px rgba(43,159,216,0.25);
+}
+
+.color-swatch.active {
+    border-color: var(--primary);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(43,159,216,0.2), 0 4px 12px rgba(43,159,216,0.2);
+}
+
+.color-swatch.color-swatch-light { border-color: var(--border); }
+.color-swatch.color-swatch-light.active { border-color: var(--primary); }
+
+/* Smooth image swap transition */
+.product-image img {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 #size-select {
     width: 100%;
     padding: 12px;
@@ -489,19 +546,53 @@ header.navbar .logo img { height: 50px; }
 }
 #size-select:focus { border-color: var(--primary); }
 
+/* Two-button group */
+.product-btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+}
+
 .buy-btn {
     width: 100%;
-    padding: 15px;
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    font-weight: bold;
-    font-size: 1.1rem;
+    padding: 14px;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
     border-radius: 8px;
     transition: var(--transition);
+    border: none;
 }
-.buy-btn:hover { background: var(--primary-dark); transform: scale(1.02); }
+
+/* Add to Cart — outlined */
+.btn-cart {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-cart:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+/* Buy Now — solid */
+.btn-buynow {
+    background: var(--primary);
+    color: #fff;
+}
+
+.btn-buynow:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+    .product-btn-group {
+        grid-template-columns: 1fr;
+    }
+}
 
 
 /* =================================================

@@ -166,29 +166,143 @@ function removeItem(idx) {
 }
 
 function updateSummary(cart) {
-    const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+    const subtotal   = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
     const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
 
     const countEl    = document.getElementById("summary-count");
     const subtotalEl = document.getElementById("summary-subtotal");
     const totalEl    = document.getElementById("summary-total");
     const waBtn      = document.getElementById("whatsapp-checkout");
+    const noteEl     = document.getElementById("address-required-note");
 
     if (countEl)    countEl.textContent    = totalItems;
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
     if (totalEl)    totalEl.textContent    = formatPrice(subtotal);
 
-    // Build WhatsApp message
+    // Render saved address display
+    const addr = getSavedAddress();
+    renderAddressDisplay(addr);
+
+    // WhatsApp button — require address before enabling
     if (waBtn) {
-        let msg = "🛒 *New Order — Claxxic India*\n\n";
-        cart.forEach((item, i) => {
-            msg += `${i + 1}. *${item.name}*\n`;
-            msg += `   Size: ${item.size} | Qty: ${item.qty} | ${formatPrice(item.price * item.qty)}\n\n`;
-        });
-        msg += `━━━━━━━━━━━━━\n`;
-        msg += `*Total: ${formatPrice(subtotal)}*\n`;
-        msg += `\nPlease confirm my order! 🙏`;
-        waBtn.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+        if (!addr) {
+            waBtn.style.opacity        = "0.45";
+            waBtn.style.pointerEvents  = "none";
+            waBtn.style.cursor         = "not-allowed";
+            if (noteEl) noteEl.style.display = "block";
+        } else {
+            waBtn.style.opacity        = "1";
+            waBtn.style.pointerEvents  = "auto";
+            waBtn.style.cursor         = "pointer";
+            if (noteEl) noteEl.style.display = "none";
+
+            // Build rich WhatsApp message with address
+            let msg = "🛒 *New Order — Claxxic India*\n\n";
+            msg += "📦 *Items Ordered:*\n";
+            cart.forEach((item, i) => {
+                msg += `\n${i + 1}. *${item.name}*\n`;
+                msg += `   Brand: ${item.brand}\n`;
+                msg += `   Size: ${item.size} | Qty: ${item.qty}\n`;
+                msg += `   Price: ${formatPrice(item.price * item.qty)}\n`;
+            });
+            msg += `\n━━━━━━━━━━━━━\n`;
+            msg += `💰 *Total: ${formatPrice(subtotal)}*\n`;
+            msg += `🚚 Shipping: FREE\n\n`;
+            msg += `📍 *Delivery Address:*\n`;
+            msg += `${addr.name}\n`;
+            msg += `${addr.phone}\n`;
+            msg += `${addr.line1}${addr.line2 ? ", " + addr.line2 : ""}\n`;
+            msg += `${addr.city}, ${addr.state} — ${addr.pin}\n`;
+            if (addr.landmark) msg += `Landmark: ${addr.landmark}\n`;
+            msg += `\nPlease confirm my order! 🙏`;
+
+            waBtn.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+        }
+    }
+}
+
+
+/* =================================================
+   ADDRESS SYSTEM — localStorage
+================================================= */
+function getSavedAddress() {
+    try {
+        const raw = localStorage.getItem("claxxic_address");
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
+function saveAddress() {
+    const get = id => document.getElementById(id)?.value.trim() || "";
+
+    const name     = get("addr-name");
+    const phone    = get("addr-phone");
+    const line1    = get("addr-line1");
+    const line2    = get("addr-line2");
+    const city     = get("addr-city");
+    const state    = get("addr-state");
+    const pin      = get("addr-pin");
+    const landmark = get("addr-landmark");
+
+    // Validate required fields
+    if (!name || !phone || !line1 || !city || !state || !pin) {
+        showToast("Please fill all required (*) fields");
+        return;
+    }
+
+    const addr = { name, phone, line1, line2, city, state, pin, landmark };
+    localStorage.setItem("claxxic_address", JSON.stringify(addr));
+
+    // Close form
+    document.getElementById("address-form")?.classList.remove("open");
+    showToast("✓ Address saved");
+
+    // Refresh summary so WhatsApp button enables
+    updateSummary(getCart());
+}
+
+function renderAddressDisplay(addr) {
+    const displayEl = document.getElementById("address-display");
+    const editBtn   = document.getElementById("address-edit-btn");
+    if (!displayEl) return;
+
+    if (!addr) {
+        displayEl.innerHTML = `<p class="address-missing">No address saved. Add your delivery address to place an order.</p>`;
+        if (editBtn) editBtn.textContent = "+ Add Address";
+    } else {
+        displayEl.innerHTML = `
+            <div class="address-display">
+                <strong>${addr.name} &nbsp;·&nbsp; ${addr.phone}</strong>
+                ${addr.line1}${addr.line2 ? ", " + addr.line2 : ""}<br>
+                ${addr.city}, ${addr.state} — ${addr.pin}
+                ${addr.landmark ? `<br><span style="color:var(--text-light);font-size:0.82rem;">Near: ${addr.landmark}</span>` : ""}
+            </div>`;
+        if (editBtn) editBtn.textContent = "✏️ Edit";
+    }
+}
+
+function toggleAddressForm() {
+    const form = document.getElementById("address-form");
+    if (!form) return;
+
+    const isOpen = form.classList.contains("open");
+
+    if (!isOpen) {
+        // Pre-fill existing address if any
+        const addr = getSavedAddress();
+        if (addr) {
+            document.getElementById("addr-name").value     = addr.name     || "";
+            document.getElementById("addr-phone").value    = addr.phone    || "";
+            document.getElementById("addr-line1").value    = addr.line1    || "";
+            document.getElementById("addr-line2").value    = addr.line2    || "";
+            document.getElementById("addr-city").value     = addr.city     || "";
+            document.getElementById("addr-state").value    = addr.state    || "";
+            document.getElementById("addr-pin").value      = addr.pin      || "";
+            document.getElementById("addr-landmark").value = addr.landmark || "";
+        }
+        form.classList.add("open");
+    } else {
+        form.classList.remove("open");
     }
 }
 
@@ -531,6 +645,9 @@ async function loadProductPage() {
         const descEl = document.querySelector(".description");
         if (descEl) descEl.textContent = getProductDescription(shoe);
 
+        // Render color swatches
+        renderColorSwatches(shoe);
+
         const sizeSelect = document.getElementById("size-select");
         if (sizeSelect && shoe.sizes) {
             sizeSelect.innerHTML = `<option value="">Select Size</option>`;
@@ -544,6 +661,61 @@ async function loadProductPage() {
         console.error("Failed to load product:", err);
         if (nameEl) nameEl.innerText = "Error loading product";
     }
+}
+
+/* =================================================
+   COLOR SWATCHES
+================================================= */
+function renderColorSwatches(shoe) {
+    const section     = document.getElementById("color-section");
+    const swatchesEl  = document.getElementById("color-swatches");
+    const colorNameEl = document.getElementById("selected-color-name");
+    const imgEl       = document.getElementById("product-img");
+
+    if (!section || !swatchesEl || !shoe.colors || shoe.colors.length === 0) {
+        if (section) section.style.display = "none";
+        return;
+    }
+
+    section.style.display = "block";
+    swatchesEl.innerHTML  = "";
+
+    // Show first color name by default
+    if (colorNameEl) colorNameEl.textContent = shoe.colors[0].name;
+
+    shoe.colors.forEach((color, i) => {
+        const swatch = document.createElement("button");
+        swatch.className = "color-swatch" + (i === 0 ? " active" : "");
+        swatch.title     = color.name;
+        swatch.style.setProperty("--swatch-color", color.hex);
+
+        // Light swatches get a visible border so they don't disappear on white bg
+        const isLight = ["#ffffff","#fff","#f5f5f5","#fafafa","#f0f0f0"].includes(color.hex.toLowerCase());
+        if (isLight) swatch.classList.add("color-swatch-light");
+
+        swatch.addEventListener("click", () => {
+            // Update active swatch
+            swatchesEl.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("active"));
+            swatch.classList.add("active");
+
+            // Update label
+            if (colorNameEl) colorNameEl.textContent = color.name;
+
+            // Swap image with smooth fade
+            if (imgEl) {
+                imgEl.style.opacity   = "0";
+                imgEl.style.transform = "scale(0.97)";
+                setTimeout(() => {
+                    imgEl.src = color.image;
+                    imgEl.onerror = () => imgEl.src = "https://placehold.co/400x300/eaf3fa/2B9FD8?text=No+Image";
+                    imgEl.style.opacity   = "1";
+                    imgEl.style.transform = "scale(1)";
+                }, 200);
+            }
+        });
+
+        swatchesEl.appendChild(swatch);
+    });
 }
 
 /* =================================================

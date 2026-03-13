@@ -57,6 +57,14 @@
 Premium sneaker designed for comfort and style. Perfect for streetwear lovers.
 </p>
 
+<!-- COLOR VARIANTS -->
+<div class="color-section" id="color-section" style="display:none;">
+    <label class="color-label">
+        Color — <span id="selected-color-name"></span>
+    </label>
+    <div class="color-swatches" id="color-swatches"></div>
+</div>
+
 <!-- SIZE SELECT -->
 
 <label>Select Size</label>
@@ -73,11 +81,15 @@ Premium sneaker designed for comfort and style. Perfect for streetwear lovers.
 </select>
 
 
-<!-- BUTTON -->
-
-<button onclick="addToCartWithSize()" class="buy-btn">
-Add to Cart
-</button>
+<!-- BUTTONS -->
+<div class="product-btn-group">
+    <button onclick="addToCartWithSize()" class="buy-btn btn-cart">
+        🛒 Add to Cart
+    </button>
+    <button onclick="buyNow()" class="buy-btn btn-buynow">
+        ⚡ Buy Now
+    </button>
+</div>
 
 </div>
 

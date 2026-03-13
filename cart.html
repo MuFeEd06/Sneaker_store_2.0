@@ -299,6 +299,132 @@
             color: var(--primary);
         }
 
+        /* ── ADDRESS SECTION ── */
+        .address-section {
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .address-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .address-section-header h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .address-edit-btn {
+            background: none;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .address-edit-btn:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .address-display {
+            font-size: 0.87rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .address-display strong {
+            color: var(--text);
+            font-size: 0.92rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .address-missing {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            font-style: italic;
+            margin: 0;
+        }
+
+        /* Address form */
+        .address-form {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .address-form.open { display: flex; }
+
+        .address-form input {
+            width: 100%;
+            padding: 9px 12px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .address-form input:focus { border-color: var(--primary); }
+
+        .address-form input::placeholder { color: var(--text-light); }
+
+        .address-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .address-save-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 2px;
+        }
+
+        .address-save-btn:hover { background: var(--primary-dark); }
+
+        /* Required note under WhatsApp btn */
+        .address-required-note {
+            font-size: 0.78rem;
+            color: #e53e3e;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .address-form-row { grid-template-columns: 1fr; }
+        }
+
         /* ── TOAST ── */
         .toast {
             position: fixed;
@@ -414,11 +540,43 @@
                 </div>
                 <div class="summary-row">
                     <span>Shipping</span>
-                    <span style="color:#7CFFB2">FREE</span>
+                    <span style="color:var(--primary);font-weight:600;">FREE</span>
                 </div>
                 <div class="summary-row total">
                     <span>Total</span>
                     <span id="summary-total">₹0</span>
+                </div>
+
+                <!-- ── DELIVERY ADDRESS ── -->
+                <div class="address-section">
+                    <div class="address-section-header">
+                        <h3>📍 Delivery Address</h3>
+                        <button class="address-edit-btn" id="address-edit-btn" onclick="toggleAddressForm()">
+                            + Add Address
+                        </button>
+                    </div>
+
+                    <!-- Saved address display -->
+                    <div id="address-display">
+                        <p class="address-missing">No address saved. Add your delivery address to place an order.</p>
+                    </div>
+
+                    <!-- Collapsible form -->
+                    <div class="address-form" id="address-form">
+                        <input type="text" id="addr-name"     placeholder="Full Name *" maxlength="60">
+                        <input type="tel"  id="addr-phone"    placeholder="Phone Number *" maxlength="15">
+                        <input type="text" id="addr-line1"    placeholder="House / Flat / Building *" maxlength="80">
+                        <input type="text" id="addr-line2"    placeholder="Street / Area / Locality" maxlength="80">
+                        <div class="address-form-row">
+                            <input type="text" id="addr-city"  placeholder="City *" maxlength="40">
+                            <input type="text" id="addr-state" placeholder="State *" maxlength="40">
+                        </div>
+                        <div class="address-form-row">
+                            <input type="text" id="addr-pin"      placeholder="PIN Code *" maxlength="10">
+                            <input type="text" id="addr-landmark" placeholder="Landmark (optional)" maxlength="60">
+                        </div>
+                        <button class="address-save-btn" onclick="saveAddress()">Save Address</button>
+                    </div>
                 </div>
 
                 <a id="whatsapp-checkout" href="#" class="whatsapp-checkout-btn" target="_blank">
@@ -427,6 +585,9 @@
                     </svg>
                     Order via WhatsApp
                 </a>
+                <p class="address-required-note" id="address-required-note">
+                    ⚠️ Please add a delivery address before ordering.
+                </p>
 
                 <a href="index.html" class="continue-btn">← Continue Shopping</a>
             </div>
