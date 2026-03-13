@@ -49,6 +49,12 @@ function updateCartBadge() {
     document.querySelectorAll("#cart-count").forEach(el => el.textContent = total);
 }
 
+/* helper — get currently selected color name from swatches */
+function getSelectedColor() {
+    const active = document.querySelector(".color-swatch.active");
+    return active ? active.title : "";
+}
+
 function addToCartWithSize() {
     const size = document.getElementById("size-select").value;
     if (!size) { showToast("Please select a size first"); return; }
@@ -58,21 +64,48 @@ function addToCartWithSize() {
     const price = document.getElementById("product-price")?.innerText || "₹0";
     const image = document.getElementById("product-img")?.src || "";
     const brand = name.split(" ")[0];
+    const color = getSelectedColor(); // ← capture selected color
 
-    // Parse numeric price from "₹18,500"
     const numericPrice = parseInt(price.replace(/[^0-9]/g, "")) || 0;
 
-    const cart = getCart();
-    const existing = cart.find(i => i.id === id && i.size === size);
+    const cart     = getCart();
+    const existing = cart.find(i => i.id === id && i.size === size && i.color === color);
 
     if (existing) {
         existing.qty++;
     } else {
-        cart.push({ id, name, brand, price: numericPrice, image, size, qty: 1 });
+        cart.push({ id, name, brand, price: numericPrice, image, size, color, qty: 1 });
     }
 
     saveCart(cart);
-    showToast(`Added to cart — ${size}`);
+    showToast(`Added to cart — ${size}${color ? " · " + color : ""}`);
+}
+
+/* Buy Now — add to cart then go straight to cart page */
+function buyNow() {
+    const size = document.getElementById("size-select").value;
+    if (!size) { showToast("Please select a size first"); return; }
+
+    const id    = parseInt(localStorage.getItem("productId"));
+    const name  = document.getElementById("product-name")?.innerText || "";
+    const price = document.getElementById("product-price")?.innerText || "₹0";
+    const image = document.getElementById("product-img")?.src || "";
+    const brand = name.split(" ")[0];
+    const color = getSelectedColor();
+
+    const numericPrice = parseInt(price.replace(/[^0-9]/g, "")) || 0;
+
+    const cart     = getCart();
+    const existing = cart.find(i => i.id === id && i.size === size && i.color === color);
+
+    if (existing) {
+        existing.qty++;
+    } else {
+        cart.push({ id, name, brand, price: numericPrice, image, size, color, qty: 1 });
+    }
+
+    saveCart(cart);
+    window.location.href = "cart.html"; // ← redirect immediately
 }
 
 /* ── TOAST ── */
@@ -120,16 +153,26 @@ function renderCartPage() {
     cart.forEach((item, idx) => {
         const row = document.createElement("div");
         row.className = "cart-item fade-in";
+
+        // Color chip — only shown if color was selected
+        const colorChip = item.color
+            ? `<span class="cart-item-color">
+                   <span class="cart-color-dot" style="background:${getColorHex(item.color)}"></span>
+                   ${item.color}
+               </span>`
+            : "";
+
         row.innerHTML = `
             <img class="cart-item-img"
                  src="${item.image}"
                  alt="${item.name}"
-                 onerror="this.src='https://placehold.co/90x90/111/7CFFB2?text=👟'">
+                 onerror="this.src='https://placehold.co/90x90/eaf3fa/2B9FD8?text=👟'">
 
             <div class="cart-item-details">
                 <span class="cart-item-brand">${item.brand}</span>
                 <span class="cart-item-name">${item.name}</span>
                 <span class="cart-item-size">Size: <span>${item.size}</span></span>
+                ${colorChip}
                 <span class="cart-item-price">${formatPrice(item.price)}</span>
             </div>
 
@@ -165,6 +208,20 @@ function removeItem(idx) {
     renderCartPage();
 }
 
+/* Helper — look up hex for a color name from products.json cache */
+function getColorHex(colorName) {
+    // Try to find from any loaded product's colors array
+    try {
+        const cached = JSON.parse(localStorage.getItem("claxxic_products") || "[]");
+        for (const p of cached) {
+            if (!p.colors) continue;
+            const match = p.colors.find(c => c.name === colorName);
+            if (match) return match.hex;
+        }
+    } catch {}
+    return "#aaa"; // fallback grey dot
+}
+
 function updateSummary(cart) {
     const subtotal   = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
     const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
@@ -183,27 +240,37 @@ function updateSummary(cart) {
     const addr = getSavedAddress();
     renderAddressDisplay(addr);
 
-    // WhatsApp button — require address before enabling
     if (waBtn) {
         if (!addr) {
-            waBtn.style.opacity        = "0.45";
-            waBtn.style.pointerEvents  = "none";
-            waBtn.style.cursor         = "not-allowed";
+            // No address — disable button
+            waBtn.style.opacity       = "0.45";
+            waBtn.style.pointerEvents = "none";
+            waBtn.style.cursor        = "not-allowed";
             if (noteEl) noteEl.style.display = "block";
         } else {
-            waBtn.style.opacity        = "1";
-            waBtn.style.pointerEvents  = "auto";
-            waBtn.style.cursor         = "pointer";
+            waBtn.style.opacity       = "1";
+            waBtn.style.pointerEvents = "auto";
+            waBtn.style.cursor        = "pointer";
             if (noteEl) noteEl.style.display = "none";
 
-            // Build rich WhatsApp message with address
+            // Build rich WhatsApp message with color + image URL
             let msg = "🛒 *New Order — Claxxic India*\n\n";
-            msg += "📦 *Items Ordered:*\n";
+            msg += "👟 *Items Ordered:*\n";
             cart.forEach((item, i) => {
                 msg += `\n${i + 1}. *${item.name}*\n`;
                 msg += `   Brand: ${item.brand}\n`;
-                msg += `   Size: ${item.size} | Qty: ${item.qty}\n`;
+                msg += `   Size: ${item.size}\n`;
+                if (item.color) msg += `   Color: ${item.color}\n`;
+                msg += `   Qty: ${item.qty}\n`;
                 msg += `   Price: ${formatPrice(item.price * item.qty)}\n`;
+                // Include image URL so seller can see the exact variant
+                if (item.image) {
+                    // Convert relative path to absolute if possible
+                    const imgUrl = item.image.startsWith("http")
+                        ? item.image
+                        : `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, "/")}${item.image}`;
+                    msg += `   🖼 Image: ${imgUrl}\n`;
+                }
             });
             msg += `\n━━━━━━━━━━━━━\n`;
             msg += `💰 *Total: ${formatPrice(subtotal)}*\n`;
@@ -234,7 +301,6 @@ function getSavedAddress() {
 
 function saveAddress() {
     const get = id => document.getElementById(id)?.value.trim() || "";
-
     const name     = get("addr-name");
     const phone    = get("addr-phone");
     const line1    = get("addr-line1");
@@ -244,20 +310,14 @@ function saveAddress() {
     const pin      = get("addr-pin");
     const landmark = get("addr-landmark");
 
-    // Validate required fields
     if (!name || !phone || !line1 || !city || !state || !pin) {
         showToast("Please fill all required (*) fields");
         return;
     }
 
-    const addr = { name, phone, line1, line2, city, state, pin, landmark };
-    localStorage.setItem("claxxic_address", JSON.stringify(addr));
-
-    // Close form
+    localStorage.setItem("claxxic_address", JSON.stringify({ name, phone, line1, line2, city, state, pin, landmark }));
     document.getElementById("address-form")?.classList.remove("open");
     showToast("✓ Address saved");
-
-    // Refresh summary so WhatsApp button enables
     updateSummary(getCart());
 }
 
@@ -284,11 +344,8 @@ function renderAddressDisplay(addr) {
 function toggleAddressForm() {
     const form = document.getElementById("address-form");
     if (!form) return;
-
     const isOpen = form.classList.contains("open");
-
     if (!isOpen) {
-        // Pre-fill existing address if any
         const addr = getSavedAddress();
         if (addr) {
             document.getElementById("addr-name").value     = addr.name     || "";
@@ -418,7 +475,10 @@ function renderBrandTiles() {
 ================================================= */
 async function fetchProducts() {
     const res = await fetch("products.json");
-    return await res.json();
+    const data = await res.json();
+    // Cache for color hex lookup in cart
+    try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
+    return data;
 }
 
 /* =================================================
