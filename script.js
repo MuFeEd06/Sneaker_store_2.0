@@ -49,10 +49,16 @@ function updateCartBadge() {
     document.querySelectorAll("#cart-count").forEach(el => el.textContent = total);
 }
 
-/* helper — get currently selected color name from swatches */
+/* helper — get currently selected color name */
 function getSelectedColor() {
     const active = document.querySelector(".color-swatch.active");
     return active ? active.title : "";
+}
+
+/* helper — read live displayed price (updates when color changes) */
+function getCurrentPrice() {
+    const raw = document.getElementById("product-price")?.innerText || "₹0";
+    return parseInt(raw.replace(/[^0-9]/g, "")) || 0;
 }
 
 function addToCartWithSize() {
@@ -61,12 +67,10 @@ function addToCartWithSize() {
 
     const id    = parseInt(localStorage.getItem("productId"));
     const name  = document.getElementById("product-name")?.innerText || "";
-    const price = document.getElementById("product-price")?.innerText || "₹0";
     const image = document.getElementById("product-img")?.src || "";
     const brand = name.split(" ")[0];
-    const color = getSelectedColor(); // ← capture selected color
-
-    const numericPrice = parseInt(price.replace(/[^0-9]/g, "")) || 0;
+    const color = getSelectedColor();
+    const numericPrice = getCurrentPrice(); // reads live color price
 
     const cart     = getCart();
     const existing = cart.find(i => i.id === id && i.size === size && i.color === color);
@@ -88,12 +92,10 @@ function buyNow() {
 
     const id    = parseInt(localStorage.getItem("productId"));
     const name  = document.getElementById("product-name")?.innerText || "";
-    const price = document.getElementById("product-price")?.innerText || "₹0";
     const image = document.getElementById("product-img")?.src || "";
     const brand = name.split(" ")[0];
     const color = getSelectedColor();
-
-    const numericPrice = parseInt(price.replace(/[^0-9]/g, "")) || 0;
+    const numericPrice = getCurrentPrice();
 
     const cart     = getCart();
     const existing = cart.find(i => i.id === id && i.size === size && i.color === color);
@@ -105,7 +107,7 @@ function buyNow() {
     }
 
     saveCart(cart);
-    window.location.href = "cart.html"; // ← redirect immediately
+    window.location.href = "cart.html";
 }
 
 /* ── TOAST ── */
@@ -153,26 +155,16 @@ function renderCartPage() {
     cart.forEach((item, idx) => {
         const row = document.createElement("div");
         row.className = "cart-item fade-in";
-
-        // Color chip — only shown if color was selected
-        const colorChip = item.color
-            ? `<span class="cart-item-color">
-                   <span class="cart-color-dot" style="background:${getColorHex(item.color)}"></span>
-                   ${item.color}
-               </span>`
-            : "";
-
         row.innerHTML = `
             <img class="cart-item-img"
                  src="${item.image}"
                  alt="${item.name}"
-                 onerror="this.src='https://placehold.co/90x90/eaf3fa/2B9FD8?text=👟'">
+                 onerror="this.src='https://placehold.co/90x90/111/7CFFB2?text=👟'">
 
             <div class="cart-item-details">
                 <span class="cart-item-brand">${item.brand}</span>
                 <span class="cart-item-name">${item.name}</span>
                 <span class="cart-item-size">Size: <span>${item.size}</span></span>
-                ${colorChip}
                 <span class="cart-item-price">${formatPrice(item.price)}</span>
             </div>
 
@@ -208,20 +200,6 @@ function removeItem(idx) {
     renderCartPage();
 }
 
-/* Helper — look up hex for a color name from products.json cache */
-function getColorHex(colorName) {
-    // Try to find from any loaded product's colors array
-    try {
-        const cached = JSON.parse(localStorage.getItem("claxxic_products") || "[]");
-        for (const p of cached) {
-            if (!p.colors) continue;
-            const match = p.colors.find(c => c.name === colorName);
-            if (match) return match.hex;
-        }
-    } catch {}
-    return "#aaa"; // fallback grey dot
-}
-
 function updateSummary(cart) {
     const subtotal   = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
     const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
@@ -236,24 +214,25 @@ function updateSummary(cart) {
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
     if (totalEl)    totalEl.textContent    = formatPrice(subtotal);
 
-    // Render saved address display
+    // Always re-render address display
     const addr = getSavedAddress();
     renderAddressDisplay(addr);
 
     if (waBtn) {
         if (!addr) {
-            // No address — disable button
+            // No address — block WhatsApp button
             waBtn.style.opacity       = "0.45";
             waBtn.style.pointerEvents = "none";
             waBtn.style.cursor        = "not-allowed";
             if (noteEl) noteEl.style.display = "block";
         } else {
+            // Address saved — enable button
             waBtn.style.opacity       = "1";
             waBtn.style.pointerEvents = "auto";
             waBtn.style.cursor        = "pointer";
             if (noteEl) noteEl.style.display = "none";
 
-            // Build rich WhatsApp message with color + image URL
+            // Build rich WhatsApp message with color + image + address
             let msg = "🛒 *New Order — Claxxic India*\n\n";
             msg += "👟 *Items Ordered:*\n";
             cart.forEach((item, i) => {
@@ -263,9 +242,7 @@ function updateSummary(cart) {
                 if (item.color) msg += `   Color: ${item.color}\n`;
                 msg += `   Qty: ${item.qty}\n`;
                 msg += `   Price: ${formatPrice(item.price * item.qty)}\n`;
-                // Include image URL so seller can see the exact variant
                 if (item.image) {
-                    // Convert relative path to absolute if possible
                     const imgUrl = item.image.startsWith("http")
                         ? item.image
                         : `${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, "/")}${item.image}`;
@@ -315,7 +292,9 @@ function saveAddress() {
         return;
     }
 
-    localStorage.setItem("claxxic_address", JSON.stringify({ name, phone, line1, line2, city, state, pin, landmark }));
+    localStorage.setItem("claxxic_address", JSON.stringify(
+        { name, phone, line1, line2, city, state, pin, landmark }
+    ));
     document.getElementById("address-form")?.classList.remove("open");
     showToast("✓ Address saved");
     updateSummary(getCart());
@@ -475,10 +454,7 @@ function renderBrandTiles() {
 ================================================= */
 async function fetchProducts() {
     const res = await fetch("products.json");
-    const data = await res.json();
-    // Cache for color hex lookup in cart
-    try { localStorage.setItem("claxxic_products", JSON.stringify(data)); } catch {}
-    return data;
+    return await res.json();
 }
 
 /* =================================================
@@ -731,6 +707,7 @@ function renderColorSwatches(shoe) {
     const swatchesEl  = document.getElementById("color-swatches");
     const colorNameEl = document.getElementById("selected-color-name");
     const imgEl       = document.getElementById("product-img");
+    const priceEl     = document.getElementById("product-price");
 
     if (!section || !swatchesEl || !shoe.colors || shoe.colors.length === 0) {
         if (section) section.style.display = "none";
@@ -740,8 +717,12 @@ function renderColorSwatches(shoe) {
     section.style.display = "block";
     swatchesEl.innerHTML  = "";
 
-    // Show first color name by default
-    if (colorNameEl) colorNameEl.textContent = shoe.colors[0].name;
+    // Set first color as default — update name + price
+    const firstColor = shoe.colors[0];
+    if (colorNameEl) colorNameEl.textContent = firstColor.name;
+    if (priceEl && firstColor.price) {
+        priceEl.textContent = formatPrice(firstColor.price);
+    }
 
     shoe.colors.forEach((color, i) => {
         const swatch = document.createElement("button");
@@ -749,7 +730,9 @@ function renderColorSwatches(shoe) {
         swatch.title     = color.name;
         swatch.style.setProperty("--swatch-color", color.hex);
 
-        // Light swatches get a visible border so they don't disappear on white bg
+        // Show price badge on swatch if different from base price
+        const hasDifferentPrice = color.price && color.price !== shoe.price;
+
         const isLight = ["#ffffff","#fff","#f5f5f5","#fafafa","#f0f0f0"].includes(color.hex.toLowerCase());
         if (isLight) swatch.classList.add("color-swatch-light");
 
@@ -758,8 +741,20 @@ function renderColorSwatches(shoe) {
             swatchesEl.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("active"));
             swatch.classList.add("active");
 
-            // Update label
+            // Update color name label
             if (colorNameEl) colorNameEl.textContent = color.name;
+
+            // Update price — use color's price if set, else fall back to base
+            if (priceEl) {
+                const newPrice = color.price || shoe.price;
+                // Animate price change
+                priceEl.style.transform = "scale(1.12)";
+                priceEl.style.color     = "var(--primary)";
+                priceEl.textContent     = formatPrice(newPrice);
+                setTimeout(() => {
+                    priceEl.style.transform = "scale(1)";
+                }, 250);
+            }
 
             // Swap image with smooth fade
             if (imgEl) {

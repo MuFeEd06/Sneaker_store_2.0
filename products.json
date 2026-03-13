@@ -8,10 +8,10 @@
     "sizes": ["UK 6","UK 7","UK 8","UK 9","UK 10"],
     "tag": "trending",
     "colors": [
-      { "name": "Black/Red",   "hex": "#1a1a1a", "image": "shoes/nike/nike-air-jordan-1-high.jpg" },
-      { "name": "Royal Blue",  "hex": "#1a4faa", "image": "shoes/nike/nike-air-jordan-1-high-royal.jpg" },
-      { "name": "Chicago Red", "hex": "#c8102e", "image": "shoes/nike/nike-air-jordan-1-high-chicago.jpg" },
-      { "name": "White",       "hex": "#f5f5f5", "image": "shoes/nike/nike-air-jordan-1-high-white.jpg" }
+      { "name": "Black/Red",   "hex": "#1a1a1a", "price": 18500, "image": "shoes/nike/nike-air-jordan-1-high.jpg" },
+      { "name": "Royal Blue",  "hex": "#1a4faa", "price": 19500, "image": "shoes/nike/nike-air-jordan-1-high-royal.jpg" },
+      { "name": "Chicago Red", "hex": "#c8102e", "price": 21000, "image": "shoes/nike/nike-air-jordan-1-high-chicago.jpg" },
+      { "name": "White",       "hex": "#f5f5f5", "price": 17500, "image": "shoes/nike/nike-air-jordan-1-high-white.jpg" }
     ]
   },
   {
@@ -23,10 +23,10 @@
     "sizes": ["UK 6","UK 7","UK 8","UK 9","UK 10"],
     "tag": "trending",
     "colors": [
-      { "name": "Panda",          "hex": "#1a1a1a", "image": "shoes/nike/nike-dunk-low.jpg" },
-      { "name": "White/Grey",     "hex": "#d0d0d0", "image": "shoes/nike/nike-dunk-low-grey.jpg" },
-      { "name": "University Red", "hex": "#cc0000", "image": "shoes/nike/nike-dunk-low-red.jpg" },
-      { "name": "Green",          "hex": "#2d7a3a", "image": "shoes/nike/nike-dunk-low-green.jpg" }
+      { "name": "Panda",          "hex": "#1a1a1a", "price": 12000, "image": "shoes/nike/nike-dunk-low.jpg" },
+      { "name": "White/Grey",     "hex": "#d0d0d0", "price": 11000, "image": "shoes/nike/nike-dunk-low-grey.jpg" },
+      { "name": "University Red", "hex": "#cc0000", "price": 13500, "image": "shoes/nike/nike-dunk-low-red.jpg" },
+      { "name": "Green",          "hex": "#2d7a3a", "price": 12500, "image": "shoes/nike/nike-dunk-low-green.jpg" }
     ]
   },
   {
@@ -38,9 +38,9 @@
     "sizes": ["UK 6","UK 7","UK 8","UK 9","UK 10"],
     "tag": "",
     "colors": [
-      { "name": "White",    "hex": "#f5f5f5", "image": "shoes/nike/nike-air-max-90.jpg" },
-      { "name": "Black",    "hex": "#111111", "image": "shoes/nike/nike-air-max-90-black.jpg" },
-      { "name": "Infrared", "hex": "#ff3a00", "image": "shoes/nike/nike-air-max-90-infrared.jpg" }
+      { "name": "White",    "hex": "#f5f5f5", "price": 13500, "image": "shoes/nike/nike-air-max-90.jpg" },
+      { "name": "Black",    "hex": "#111111", "price": 14000, "image": "shoes/nike/nike-air-max-90-black.jpg" },
+      { "name": "Infrared", "hex": "#ff3a00", "price": 15500, "image": "shoes/nike/nike-air-max-90-infrared.jpg" }
     ]
   },
   {
